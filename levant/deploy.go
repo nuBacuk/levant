@@ -120,8 +120,9 @@ func (l *levantDeployment) preDeployValidate() (success bool) {
 func (l *levantDeployment) deploy() (success bool) {
 
 	log.Info().Msgf("levant/deploy: triggering a deployment")
-
-	l.config.Template.Job.VaultToken = &l.config.Deploy.VaultToken
+	if l.config.Deploy.VaultToken != "" {
+		log.Warn().Msg("Vault token option is ignored with Nomad v1.10+")
+	}
 
 	eval, _, err := l.nomad.Jobs().Register(l.config.Template.Job, nil)
 	if err != nil {
