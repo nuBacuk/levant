@@ -119,3 +119,29 @@ func TestTemplater_RenderTemplate(t *testing.T) {
 		t.Fatalf("expected %s but got %v", testEnvValue, *job.TaskGroups[0].Name)
 	}
 }
+
+// Test to ensure Nomad jobs with the new Vault default_identity block are
+// correctly parsed using jobspec2.
+func TestTemplater_RenderTemplate_VaultOptions(t *testing.T) {
+	fVars := make(map[string]interface{})
+	job, err := RenderJob("test-fixtures/vault_allow_expiration.nomad", nil, "", &fVars)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if *job.Name != "vaulttest" {
+		t.Fatalf("expected vaulttest but got %v", *job.Name)
+	}
+	if job.TaskGroups == nil || len(job.TaskGroups) == 0 {
+		t.Fatalf("expected task group but got none")
+	}
+	task := job.TaskGroups[0].Tasks[0]
+	if task.Vault == nil {
+		t.Fatalf("vault block not parsed")
+	}
+	if task.Vault.AllowTokenExpiration == nil || !*task.Vault.AllowTokenExpiration {
+		t.Fatalf("allow_token_expiration not parsed")
+	}
+	if task.Vault.ChangeSignal == nil || *task.Vault.ChangeSignal != "SIGUSR1" {
+		t.Fatalf("change_signal not parsed")
+	}
+}
